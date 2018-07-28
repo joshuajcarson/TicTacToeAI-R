@@ -38,6 +38,7 @@ pick_future_game_state <- function(possible_future_game_states, X_AI = NA, O_AI 
     future_game_states_as_matrix <- matrix(unlist(possible_future_game_states), nrow=length(possible_future_game_states), byrow=T)
     future_game_states_as_dataframe <- data.frame(future_game_states_as_matrix, stringsAsFactors=FALSE)
     names(future_game_states_as_dataframe) <- c('top_left', 'top_middle', 'top_right', 'middle_left', 'middle_middle', 'middle_right', 'bottom_left', 'bottom_middle', 'bottom_right', 'game_turn', 'winner', 'game_guid')
+    future_game_states_as_dataframe$game_turn <- as.numeric(future_game_states_as_dataframe$game_turn)
     probabilities_for_future_moves <- predict(X_AI, newdata = future_game_states_as_dataframe[, 1:11], type='prob')
     if(max(probabilities_for_future_moves$X_WIN) > max(probabilities_for_future_moves$X_EVENTUAL_WIN))
     {
@@ -125,6 +126,14 @@ setup_parallel <- function() {
   registerDoParallel(cluster)
 }
 
+save_game_history <- function() {
+  write.csv(game_manager$game_history, 'results/game_history.csv', row.names = FALSE)
+}
+
+load_game_history <- function() {
+  game_manager$game_history <- read.csv(file = 'results/game_history.csv', row.names = NULL, stringsAsFactors = FALSE)
+}
+
 setup_parallel()
 initiate_initial_game()
 play_multiple_rounds(1000)
@@ -143,9 +152,10 @@ tic_tac_toe_ai <- train(winner ~ .,
                         trControl = tic_tac_toe_ai_control,
                         metric = tic_tac_toe_ai_metric,
                         tunGrid = tic_tac_toe_ai_tunegrid)
-tic_tac_toe_ai_pred <- predict(tic_tac_toe_ai, newdata = game_history_testing, type='prob')
-confusionMatrix(tic_tac_toe_ai_pred, game_history_testing$winner)
-
-play_multiple_rounds(number_of_rounds = 100, X_AI = tic_tac_toe_ai)
 
 table(game_manager$game_history$winner)
+play_multiple_rounds(number_of_rounds = 100, X_AI = tic_tac_toe_ai)
+table(game_manager$game_history$winner)
+
+tic_tac_toe_ai_pred <- predict(tic_tac_toe_ai, newdata = game_history_testing, type='prob')
+confusionMatrix(tic_tac_toe_ai_pred, game_history_testing$winner)
