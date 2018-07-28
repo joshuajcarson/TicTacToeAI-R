@@ -132,15 +132,25 @@ play_multiple_rounds <- function(number_of_rounds = 100, X_AI = NA, O_AI = NA) {
 }
 
 initiate_initial_game()
-play_multiple_rounds(1000)
+play_multiple_rounds()
 
 training_rows <- createDataPartition(y = game_manager$game_history$winner, p = .8, list = FALSE)
 game_history_training <- game_manager$game_history[training_rows, 1:11]
 game_history_testing <- game_manager$game_history[-training_rows, 1:11]
 
-pls_fit_tic_tac_toe_ai <- train(winner ~ ., data = game_history_training, method = 'pls', preProc = c('center', 'scale'))
-pls_props_tic_tac_toe_ai <- predict(pls_fit_tic_tac_toe_ai, newdata = game_history_testing, type='prob')
+tic_tac_toe_ai_control <- trainControl(method='repeatedcv', number = 10, repeats = 3)
+tic_tac_toe_ai_metric <- 'Accuracy'
+tic_tac_toe_ai_mtry <- sqrt(ncol(game_history_training))
+tic_tac_toe_ai_tunegrid <- expand.grid(.mtry = tic_tac_toe_ai_mtry)
+tic_tac_toe_ai <- train(winner ~ ., 
+                        data = game_history_training, 
+                        method = 'rf', 
+                        trControl = tic_tac_toe_ai_control,
+                        metric = tic_tac_toe_ai_metric,
+                        tunGrid = tic_tac_toe_ai_tunegrid)
+tic_tac_toe_ai_pred <- predict(tic_tac_toe_ai, newdata = game_history_testing, type='prob')
+confusionMatrix(tic_tac_toe_ai_pred, game_history_testing$winner)
 
-play_multiple_rounds(number_of_rounds = 100, X_AI = pls_fit_tic_tac_toe_ai)
+play_multiple_rounds(number_of_rounds = 100, X_AI = tic_tac_toe_ai)
 
 table(game_manager$game_history$winner)
