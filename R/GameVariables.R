@@ -6,6 +6,10 @@ game_variables$UNKNOWN_WINNER <- 'U'
 game_variables$X_WINNER <- 'X_WIN'
 game_variables$O_WINNER <- 'O_WIN'
 game_variables$TIE_WINNER <- 'TIE_WIN'
+game_variables$X_EVENTUAL_WINNER <- 'X_EVENTUAL_WIN'
+game_variables$O_EVENTUAL_WINNER <- 'O_EVENTUAL_WIN'
+game_variables$TIE_EVENTUAL_WINNER <- 'TIE_EVENTUAL_WIN'
+game_variables$INITIAL_GAME_TURN <- 1
 
 game_variables$TOP_ROW <- c(1,2,3)
 game_variables$MIDDLE_ROW <- c(4,5,6)
@@ -19,4 +23,6 @@ game_variables$WIN_CONDITIONS <- list(game_variables$TOP_ROW, game_variables$MID
                                      game_variables$LEFT_COLUMN, game_variables$MIDDLE_COLUMN, game_variables$RIGHT_COLUMN, 
                                      game_variables$BACK_SLASH, game_variables$FORWARD_SLASH)
 
-game_variables$EMPTY_GAME_STATE <- c(rep(game_variables$EMPTY_SPOT, 9), game_variables$UNKNOWN_WINNER)
+game_variables$EMPTY_GAME_STATE <- c(rep(game_variables$EMPTY_SPOT, 9),
+                                     game_variables$INITIAL_GAME_TURN,
+                                     game_variables$UNKNOWN_WINNER)
