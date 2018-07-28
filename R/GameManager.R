@@ -1,6 +1,8 @@
 library(data.table)
 library(caret)
 library(uuid)
+library(parallel)
+library(doParallel)
 source('R/GameVariables.R')
 game_manager <- new.env()
 
@@ -44,19 +46,6 @@ pick_future_game_state <- function(possible_future_game_states, X_AI = NA, O_AI 
     } else {
       top_pick_for_x_win <- which.max(probabilities_for_future_moves$X_EVENTUAL_WIN)
       possible_future_game_states[top_pick_for_x_win]
-    }
-  } else if(game_manager$cur_player == game_variables$O_SPOT && !is.na(O_AI)) {
-    future_game_states_as_matrix <- matrix(unlist(possible_future_game_states), nrow=length(possible_future_game_states), byrow=T)
-    future_game_states_as_dataframe <- data.frame(future_game_states_as_matrix, stringsAsFactors=FALSE)
-    names(future_game_states_as_dataframe) <- c('top_left', 'top_middle', 'top_right', 'middle_left', 'middle_middle', 'middle_right', 'bottom_left', 'bottom_middle', 'bottom_right', 'game_turn', 'winner', 'game_guid')
-    probabilities_for_future_moves <- predict(O_AI, newdata = future_game_states_as_dataframe[, 1:11], type='prob')
-    if(max(probabilities_for_future_moves$O_WIN) > max(probabilities_for_future_moves$O_EVENTUAL_WIN))
-    {
-      top_pick_for_o_win <- which.max(probabilities_for_future_moves$O_WIN)
-      possible_future_game_states[top_pick_for_o_win]
-    } else {
-      top_pick_for_o_win <- which.max(probabilities_for_future_moves$O_EVENTUAL_WIN)
-      possible_future_game_states[top_pick_for_o_win]
     }
   } else {
     index_to_pick <- sample(1:length(possible_future_game_states), 1)
@@ -131,14 +120,20 @@ play_multiple_rounds <- function(number_of_rounds = 100, X_AI = NA, O_AI = NA) {
   }
 }
 
+setup_parallel <- function() {
+  cluster <- makeCluster(detectCores() - 1)
+  registerDoParallel(cluster)
+}
+
+setup_parallel()
 initiate_initial_game()
-play_multiple_rounds()
+play_multiple_rounds(1000)
 
 training_rows <- createDataPartition(y = game_manager$game_history$winner, p = .8, list = FALSE)
 game_history_training <- game_manager$game_history[training_rows, 1:11]
 game_history_testing <- game_manager$game_history[-training_rows, 1:11]
 
-tic_tac_toe_ai_control <- trainControl(method='repeatedcv', number = 10, repeats = 3)
+tic_tac_toe_ai_control <- trainControl(method='repeatedcv', number = 10, repeats = 3, allowParallel = TRUE)
 tic_tac_toe_ai_metric <- 'Accuracy'
 tic_tac_toe_ai_mtry <- sqrt(ncol(game_history_training))
 tic_tac_toe_ai_tunegrid <- expand.grid(.mtry = tic_tac_toe_ai_mtry)
